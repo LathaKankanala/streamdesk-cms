@@ -1,0 +1,177 @@
+<div class="page-head">
+  <div>
+    <a routerLink="/contents" class="back-link">‹ Content Library</a>
+    <h1>{{ isEdit() ? 'Edit content' : 'Add content' }}</h1>
+  </div>
+</div>
+
+@if (loadError()) {
+  <div class="alert alert-error" role="alert">
+    {{ loadError() }} <a routerLink="/contents">Back to library</a>
+  </div>
+} @else {
+  <form class="form-layout" [formGroup]="form" (ngSubmit)="submit()" novalidate [class.is-loading]="loading()">
+    <div class="form-main">
+      <section class="card">
+        <h2 class="card-title">Basic details</h2>
+
+        <label class="field">
+          <span>Title <em>*</em></span>
+          <input formControlName="title" maxlength="120" placeholder="e.g. The Monsoon Ledger" />
+          @if (c.title.pending) {
+            <small class="hint">Checking availability…</small>
+          } @else if (showError(c.title)) {
+            <small class="error">
+              @if (c.title.hasError('required')) { Title is required. }
+              @else if (c.title.hasError('maxlength')) { Title must be 120 characters or fewer. }
+              @else if (c.title.hasError('taken')) { A title with this name already exists. }
+            </small>
+          }
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Content type</span>
+            <select formControlName="type">
+              @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </label>
+          <label class="field">
+            <span>Genre</span>
+            <select formControlName="genre">
+              @for (g of genres; track g) { <option [value]="g">{{ g }}</option> }
+            </select>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Release date <em>*</em></span>
+            <input type="date" formControlName="releaseDate" />
+            @if (showError(c.releaseDate)) {
+              <small class="error">
+                {{ c.releaseDate.hasError('required') ? 'Release date is required.' : 'Release date can be at most 2 years ahead.' }}
+              </small>
+            }
+          </label>
+          @if (!isLive()) {
+            <label class="field">
+              <span>Duration (minutes) <em>*</em></span>
+              <input type="number" formControlName="durationMinutes" min="1" max="600" />
+              @if (showError(c.durationMinutes)) {
+                <small class="error">
+                  {{ c.durationMinutes.hasError('durationRequired') ? 'Duration is required for on-demand content.' : 'Enter between 1 and 600 minutes.' }}
+                </small>
+              }
+            </label>
+          } @else {
+            <div class="field">
+              <span>Duration</span>
+              <p class="hint boxed">Not applicable to live channels (24×7 stream).</p>
+            </div>
+          }
+        </div>
+
+        <label class="field">
+          <span>Description</span>
+          <textarea formControlName="description" rows="4" maxlength="500" placeholder="Short synopsis shown on the title page"></textarea>
+          <small class="hint counter" [class.error]="descriptionLength() > 500">{{ descriptionLength() }}/500</small>
+        </label>
+
+        <label class="field">
+          <span>Tags</span>
+          <input formControlName="tags" placeholder="Comma separated, e.g. family, award-winning" />
+        </label>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <div>
+            <h2 class="card-title">Languages</h2>
+            <p class="muted">Primary audio language plus localized titles for other regions.</p>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Primary language</span>
+          <select formControlName="primaryLanguage">
+            @for (l of languages; track l) { <option [value]="l">{{ l }}</option> }
+          </select>
+        </label>
+
+        <div formArrayName="translations" class="translations">
+          @for (group of translations.controls; track group; let i = $index) {
+            <div class="translation-row" [formGroupName]="i">
+              <label class="field">
+                <span>Language</span>
+                <select formControlName="language">
+                  @for (l of languages; track l) { <option [value]="l">{{ l }}</option> }
+                </select>
+                @if (group.controls.language.hasError('duplicateLanguage')) {
+                  <small class="error">Language already used.</small>
+                }
+              </label>
+              <label class="field grow">
+                <span>Localized title</span>
+                <input formControlName="title" maxlength="120" />
+                @if (showError(group.controls.title)) {
+                  <small class="error">Localized title is required.</small>
+                }
+              </label>
+              <button type="button" class="icon-btn danger" (click)="removeTranslation(i)" aria-label="Remove translation">✕</button>
+            </div>
+          }
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="addTranslation()" [disabled]="translations.length >= languages.length - 1">
+          + Add translation
+        </button>
+      </section>
+    </div>
+
+    <aside class="form-side">
+      <section class="card">
+        <h2 class="card-title">Publishing</h2>
+        <label class="field">
+          <span>Status</span>
+          <div class="segmented">
+            @for (s of statuses; track s) {
+              <label [class.active]="value().status === s">
+                <input type="radio" formControlName="status" [value]="s" /> {{ s }}
+              </label>
+            }
+          </div>
+        </label>
+        <label class="field">
+          <span>Age rating</span>
+          <select formControlName="ageRating">
+            @for (r of ratings; track r) { <option [value]="r">{{ r }}</option> }
+          </select>
+        </label>
+        <label class="field">
+          <span>Thumbnail URL</span>
+          <input formControlName="thumbnailUrl" placeholder="https://…" />
+          @if (showError(c.thumbnailUrl)) {
+            <small class="error">Enter a valid http(s) URL.</small>
+          }
+        </label>
+      </section>
+
+      <section class="card preview">
+        <h2 class="card-title">Preview</h2>
+        <app-poster [title]="value().title || 'Untitled'" [src]="c.thumbnailUrl.valid ? (value().thumbnailUrl ?? '') : ''" />
+        <strong>{{ value().title || 'Untitled' }}</strong>
+        <small class="muted">
+          {{ value().type }} · {{ value().genre }} · {{ value().ageRating }}
+          @if (!isLive() && value().durationMinutes) { · {{ value().durationMinutes }} min }
+        </small>
+      </section>
+
+      <div class="form-actions">
+        <a routerLink="/contents" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving() || loading()">
+          {{ saving() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create content' }}
+        </button>
+      </div>
+    </aside>
+  </form>
+}

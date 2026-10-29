@@ -1,0 +1,42 @@
+<div class="shell" [class.nav-open]="navOpen()">
+  <aside class="sidebar">
+    <a routerLink="/dashboard" class="brand">
+      <span class="brand-mark">▶</span>
+      <span>StreamDesk <small>CMS</small></span>
+    </a>
+    <nav aria-label="Main">
+      <a routerLink="/dashboard" routerLinkActive="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
+        Dashboard
+      </a>
+      <a routerLink="/contents" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h10v2H4v-2Z"/></svg>
+        Content Library
+      </a>
+      <a routerLink="/contents/new" routerLinkActive="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+        Add Content
+      </a>
+    </nav>
+    <div class="sidebar-foot">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="resetDemo()">Reset demo data</button>
+    </div>
+  </aside>
+
+  <div class="scrim" (click)="navOpen.set(false)"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-btn" (click)="navOpen.set(!navOpen())" aria-label="Toggle navigation">☰</button>
+      <span class="demo-pill">Demo environment · sample data</span>
+      <div class="user">
+        <span class="avatar" aria-hidden="true">{{ auth.user()?.name?.charAt(0) }}</span>
+        <span class="user-name">{{ auth.user()?.name }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="auth.logout()">Sign out</button>
+      </div>
+    </header>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

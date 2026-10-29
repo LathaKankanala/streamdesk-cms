@@ -1,0 +1,82 @@
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Catalogue health at a glance.</p>
+  </div>
+  <a routerLink="/contents/new" class="btn btn-primary">+ Add content</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }} <button class="btn btn-ghost btn-sm" (click)="load()">Retry</button></div>
+}
+
+@if (stats(); as s) {
+  <section class="stat-grid">
+    <a class="card stat" routerLink="/contents">
+      <span class="stat-label">Total titles</span>
+      <span class="stat-value">{{ s.total }}</span>
+      <span class="stat-note">{{ publishRate() }}% published</span>
+    </a>
+    <a class="card stat" routerLink="/contents" [queryParams]="{ status: 'Published' }">
+      <span class="stat-label">Published</span>
+      <span class="stat-value text-success">{{ s.byStatus.Published }}</span>
+      <span class="stat-note">Live for viewers</span>
+    </a>
+    <a class="card stat" routerLink="/contents" [queryParams]="{ status: 'Draft' }">
+      <span class="stat-label">Drafts</span>
+      <span class="stat-value text-warning">{{ s.byStatus.Draft }}</span>
+      <span class="stat-note">Awaiting review</span>
+    </a>
+    <a class="card stat" routerLink="/contents" [queryParams]="{ status: 'Archived' }">
+      <span class="stat-label">Archived</span>
+      <span class="stat-value text-muted">{{ s.byStatus.Archived }}</span>
+      <span class="stat-note">Hidden from apps</span>
+    </a>
+  </section>
+
+  <section class="dash-grid">
+    <div class="card">
+      <h2 class="card-title">Titles by type</h2>
+      <ul class="bars">
+        @for (row of typeRows(); track row.type) {
+          <li>
+            <a [routerLink]="['/contents']" [queryParams]="{ type: row.type }">{{ row.type }}</a>
+            <span class="bar"><span [style.width.%]="row.pct"></span></span>
+            <strong>{{ row.count }}</strong>
+          </li>
+        }
+      </ul>
+
+      <h2 class="card-title mt">Primary languages</h2>
+      <div class="chips">
+        @for (l of s.byLanguage; track l.language) {
+          <a class="chip" [routerLink]="['/contents']" [queryParams]="{ language: l.language }">
+            {{ l.language }} <strong>{{ l.count }}</strong>
+          </a>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Recently updated</h2>
+      <ul class="recent">
+        @for (c of s.recentlyUpdated; track c.id) {
+          <li>
+            <app-poster [title]="c.title" [src]="c.thumbnailUrl" />
+            <div>
+              <a [routerLink]="['/contents', c.id, 'edit']">{{ c.title }}</a>
+              <small class="muted">{{ c.type }} · {{ c.updatedAt | date: 'mediumDate' }}</small>
+            </div>
+            <span class="badge" [class]="'badge badge-' + c.status.toLowerCase()">{{ c.status }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+} @else if (!error()) {
+  <section class="stat-grid">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="card stat skeleton"></div>
+    }
+  </section>
+}
